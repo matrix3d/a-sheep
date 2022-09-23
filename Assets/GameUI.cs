@@ -18,6 +18,6 @@ public class GameUI : MonoBehaviour
 		transform.localScale = Vector3.zero;
 		//model.pivot = new Vector2(.5f, .5f);
 		//model.TweenScale(new Vector2(1, 1), .5f).SetEase(FairyGUI.EaseType.BackOut);
-		transform.DOScale(new Vector3(1, 1, 1), .5f);//.onComplete += () => { gameObject.SetActive(false); };
+		transform.DOScale(new Vector3(1, 1, 1), .5f).SetEase(Ease.OutBack);//.onComplete += () => { gameObject.SetActive(false); };
 	}
 }
