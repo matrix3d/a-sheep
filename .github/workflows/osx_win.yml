@@ -8,7 +8,7 @@ on:
   push:
     branches: [ main ]
     paths:
-     - 'cs'
+     - ''
   workflow_dispatch:
 
 env:
@@ -40,11 +40,6 @@ jobs:
           #- Switch # Build a Nintendo Switch player.
     steps:
       - uses: actions/checkout@v2
-        with:
-          repository: 'matrix3d/qianfugame'
-          token: ${{ secrets.PAT }}
-          ref: main
-          lfs: false
       - uses: actions/cache@v1.1.0
         with:
           path: ${{ matrix.projectPath }}/Library
