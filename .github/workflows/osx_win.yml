@@ -1,0 +1,96 @@
+# This is a basic workflow to help you get started with Actions
+
+name: osx
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ main ]
+    paths:
+     - 'cs'
+  workflow_dispatch:
+
+env:
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+jobs:
+  buildForSomePlatforms:
+    name: Build for ${{ matrix.targetPlatform }} on version ${{ matrix.unityVersion }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        projectPath:
+          - cs
+        unityVersion:
+          - 2020.3.0f1
+        targetPlatform:
+          #- StandaloneOSX # Build a macOS standalone (Intel 64-bit).
+          - StandaloneWindows # Build a Windows standalone.
+          #- StandaloneWindows64 # Build a Windows 64-bit standalone.
+          #- StandaloneLinux64 # Build a Linux 64-bit standalone.
+          #- iOS # Build an iOS player.
+          #- Android # Build an Android .apk standalone app.
+          # - WebGL # WebGL.
+          #- WSAPlayer # Build an Windows Store Apps player.
+          #- PS4 # Build a PS4 Standalone.
+          #- XboxOne # Build a Xbox One Standalone.
+          #- tvOS # Build to Apple's tvOS platform.
+          #- Switch # Build a Nintendo Switch player.
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: 'matrix3d/qianfugame'
+          token: ${{ secrets.PAT }}
+          ref: main
+          lfs: false
+      - uses: actions/cache@v1.1.0
+        with:
+          path: ${{ matrix.projectPath }}/Library
+          key: Library-${{ matrix.projectPath }}-${{ matrix.targetPlatform }}
+      # 因为这个版本的unity不支持高版本urp所以替换掉字符串
+      #- run: |
+      # sed -i 's/"com.unity.render-pipelines.lightweight": "10.2.2"/"com.unity.render-pipelines.lightweight": "7.2.1"/g' ${{ matrix.projectPath }}/Packages/manifest.json
+       #  cat ${{ matrix.projectPath }}/Packages/manifest.json
+      - name: Free Disk Space for Android
+        run: |
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          docker rmi $(docker image ls -aq)
+          df -h
+          # Before
+          echo "Disk space before:"
+          df -h
+          #echo "Listing 100 largest packages"
+          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+          #echo "Removing large packages"
+          #sudo apt-get remove -y '^ghc-8.*'
+          #sudo apt-get remove -y '^dotnet-.*'
+          #sudo apt-get remove -y '^llvm-.*'
+          #sudo apt-get remove -y 'php.*'
+          #sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          #sudo apt-get autoremove -y
+          #sudo apt-get clean
+          #df -h
+          echo "Removing large directories"
+          # https://github.com/apache/flink/blob/master/tools/azure-pipelines/free_disk_space.sh
+          rm -rf /usr/share/dotnet/
+          # https://github.com/actions/virtual-environments/issues/709#issuecomment-612569242
+          rm -rf "/usr/local/share/boost"
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          # After
+          echo "Disk space after:"
+          df -h
+      - uses: game-ci/unity-builder@v2.0-alpha-6
+        with:
+          projectPath: ${{ matrix.projectPath }}
+          unityVersion: ${{ matrix.unityVersion }}
+          targetPlatform: ${{ matrix.targetPlatform }}
+          allowDirtyBuild: true
+          versioning: None
+      - uses: actions/upload-artifact@v1
+        with:
+          name: csgame_${{ matrix.targetPlatform }}_${{ github.run_number }}
+          path: build
